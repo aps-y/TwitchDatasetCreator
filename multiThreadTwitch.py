@@ -66,7 +66,7 @@ m_thread_arr = []
 
 for i in range(0,threadCount):
     thread_name = 'Thread-'+str(i+1)
-    t = Thread(runner,args=(thread_name,))
+    t = Thread(target=runner,args=(thread_name,))
     m_thread_arr.append(t)
 
 for t in m_thread_arr:
