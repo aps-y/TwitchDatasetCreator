@@ -14,7 +14,7 @@ class dataGraph :
     helix = None
     m_user_queue_semaphore = Semaphore()
 
-    def get_followers_following():
+    def get_followers_following(name):
         # Acquire Semaphore
         dataGraph.m_user_queue_semaphore.acquire()
         if(len(dataGraph.m_user_queue)==0):
@@ -23,7 +23,7 @@ class dataGraph :
         id = dataGraph.m_user_queue.pop()
         dataGraph.m_user_queue_semaphore.release()
         # Released Semaphore
-        print("In get_followers_following() for id = ",id)
+        print(name,"In get_followers_following() for id = ",id)
         user = dataGraph.helix.user(id)
         follower_count = user.followers().total
         following_count = user.following().total
@@ -49,7 +49,7 @@ class dataGraph :
                 if(len(follower_set)>=follower_count):
                     break
                 follower_set.add(int(u.id))
-        print('Total Followers = ',follower_count,'; ','Followers Obtained = ',len(follower_set))
+        print(name,'Total Followers = ',follower_count,'; ','Followers Obtained = ',len(follower_set),'for id = ',id)
 
 
         prev_count= -1
@@ -62,19 +62,19 @@ class dataGraph :
                     uu = folwing.users
                     # print('second time')
                 except Exception as e:
-                    print("did not work")
+                    print(name,"did not work")
                     break
             for u in uu:
                 if(len(following_set)>=following_count):
                     break
                 following_set.add(int(u.id))
-        print('Total Followers = ',following_count,'; ','Followers Obtained = ',len(following_set))
+        print(name,'Total Following = ',following_count,'; ','Following Obtained = ',len(following_set),'for id = ',id)
 
         return id, follower_set, following_set
     
 
-    def add_to_graph(id, follower_set, following_set):
-        print('In add_to_graph() for id =',id)
+    def add_to_graph(id, follower_set, following_set,name):
+        print(name,'In add_to_graph() for id =',id)
         dataGraph.m_node_set.add(id)
         existing_followers = set()
         for f_id in follower_set:

@@ -2,6 +2,8 @@ from threading import *
 from twitchDataset import dataGraph
 import twitch
 import argparse
+import scipy.io
+import networkx as nx
 
 m_graph_semaphore = Semaphore()
 threadCount = 0
@@ -11,11 +13,11 @@ def runner(name):
         print('Number of nodes added = ',len(dataGraph.m_node_set))
         if len(dataGraph.m_user_queue) ==0:
             break
-        id,follower_set,following_set = dataGraph.get_followers_following()
+        id,follower_set,following_set = dataGraph.get_followers_following(name)
 
         # Acquire Semaphore
         m_graph_semaphore.acquire()
-        dataGraph.add_to_graph(id,follower_set,following_set)
+        dataGraph.add_to_graph(id,follower_set,following_set,name)
         m_graph_semaphore.release()
         # Released Semaphore
 
@@ -46,8 +48,12 @@ if args.initQueue:
     dataGraph.m_user_queue.clear()
     for id in arr:
         dataGraph.m_user_queue.append(int(id))
+        dataGraph.m_user_queue_set.add(int(id))
 else:
-    dataGraph.m_user_queue = [39543557,54452228, 79774729]
+    dataGraph.m_user_queue = [17393677,54452228,6319474]
+    dataGraph.m_user_queue_set.add(39543557)
+    dataGraph.m_user_queue_set.add(54452228)
+    dataGraph.m_user_queue_set.add(79774729)
 
 if args.numThreads:
     threadCount = args.numThreads
@@ -65,3 +71,10 @@ for i in range(0,threadCount):
 
 for t in m_thread_arr:
     t.start()
+
+for t in m_thread_arr:
+    t.join()
+
+graph_array = nx.to_numpy_array(dataGraph.m_graph)
+nodes = list(dataGraph.m_graph.nodes)
+scipy.io.savemat('graphAdj.mat',{'adj':graph_array, 'node_id' : nodes})
