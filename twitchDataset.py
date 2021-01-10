@@ -2,6 +2,7 @@ import twitch
 import networkx as nx
 from threading import Semaphore
 import time
+import scipy.io
 
 class dataGraph :
     m_graph = nx.DiGraph()
@@ -13,6 +14,7 @@ class dataGraph :
     m_user_queue_set = set()
     helix = None
     m_user_queue_semaphore = Semaphore()
+    snapshot_interval = 50
 
     def get_followers_following(name):
         # Acquire Semaphore
@@ -75,6 +77,13 @@ class dataGraph :
 
     def add_to_graph(id, follower_set, following_set,name):
         print(name,'In add_to_graph() for id =',id)
+        # Saving snapshot of the graph
+        if (len(dataGraph.m_node_set))%dataGraph.snapshot_interval == 0:
+            graph_array = nx.to_numpy_array(dataGraph.m_graph)
+            nodes = list(dataGraph.m_graph.nodes)
+            scipy.io.savemat('graphAdj.mat',{'adj':graph_array, 'node_id' : nodes})
+            print('Snapshot taken with',len(dataGraph.m_node_set),'nodes')
+
         dataGraph.m_node_set.add(id)
         existing_followers = set()
         for f_id in follower_set:

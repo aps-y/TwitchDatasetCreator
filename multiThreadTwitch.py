@@ -27,7 +27,8 @@ parser.add_argument('--followerLimit',type=int)
 parser.add_argument('--followingLimit',type=int)
 parser.add_argument('--nodeLimit',type=int)
 parser.add_argument('--initQueue',type=str)
-parser.add_argument('--numThreads',type=int)
+parser.add_argument('--threadCount',type=int)
+parser.add_argument('--snapshotInterval',type=int)
 
 args = parser.parse_args()
 
@@ -51,14 +52,19 @@ if args.initQueue:
         dataGraph.m_user_queue_set.add(int(id))
 else:
     dataGraph.m_user_queue = [17393677,54452228,6319474]
-    dataGraph.m_user_queue_set.add(39543557)
+    dataGraph.m_user_queue_set.add(17393677)
     dataGraph.m_user_queue_set.add(54452228)
-    dataGraph.m_user_queue_set.add(79774729)
+    dataGraph.m_user_queue_set.add(6319474)
 
-if args.numThreads:
-    threadCount = args.numThreads
+if args.threadCount:
+    threadCount = args.threadCount
 else:
     threadCount = min(3, len(dataGraph.m_user_queue))
+
+if args.snapshotInterval:
+    dataGraph.snapshot_interval = args.snapshotInterval
+else:
+    dataGraph.snapshot_interval = 50
 
 dataGraph.helix = twitch.Helix('clientId','clientSecret')
 
@@ -66,7 +72,7 @@ m_thread_arr = []
 
 for i in range(0,threadCount):
     thread_name = 'Thread-'+str(i+1)
-    t = Thread(runner,args=(thread_name,))
+    t = Thread(target = runner,args=(thread_name,))
     m_thread_arr.append(t)
 
 for t in m_thread_arr:
