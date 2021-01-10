@@ -1,5 +1,7 @@
 import twitch
 import networkx as nx
+from threading import Semaphore
+import time
 
 class dataGraph :
     m_graph = nx.DiGraph()
@@ -10,12 +12,17 @@ class dataGraph :
     m_user_queue = []
     m_user_queue_set = set()
     helix = None
+    m_user_queue_semaphore = Semaphore()
 
     def get_followers_following():
+        # Acquire Semaphore
+        dataGraph.m_user_queue_semaphore.acquire()
         if(len(dataGraph.m_user_queue)==0):
             print('queue is empty')
             exit()
         id = dataGraph.m_user_queue.pop()
+        dataGraph.m_user_queue_semaphore.release()
+        # Released Semaphore
         print("In get_followers_following() for id = ",id)
         user = dataGraph.helix.user(id)
         follower_count = user.followers().total
@@ -26,7 +33,9 @@ class dataGraph :
         follower_set = set()
         following_set = set()
 
-        while len(follower_set)<follower_count:
+        prev_count = -1
+        while len(follower_set)<follower_count and len(follower_set)>prev_count:
+            prev_count=len(follower_set)
             try :
                 uu = folwrs.users
             except Exception as e:
@@ -40,8 +49,12 @@ class dataGraph :
                 if(len(follower_set)>=follower_count):
                     break
                 follower_set.add(int(u.id))
-        
-        while len(following_set)<following_count:
+        print('Total Followers = ',follower_count,'; ','Followers Obtained = ',len(follower_set))
+
+
+        prev_count= -1
+        while len(following_set)<following_count and len(following_set)>prev_count :
+            prev_count = len(following_set)
             try :
                 uu = folwing.users
             except Exception as e:
@@ -55,6 +68,8 @@ class dataGraph :
                 if(len(following_set)>=following_count):
                     break
                 following_set.add(int(u.id))
+        print('Total Followers = ',following_count,'; ','Followers Obtained = ',len(following_set))
+
         return id, follower_set, following_set
     
 
@@ -92,20 +107,3 @@ class dataGraph :
                 dataGraph.m_user_queue.append(f_id)
                 dataGraph.m_user_queue_set.add(f_id)
                 count+=1
-
-def runner() :
-    while len(dataGraph.m_node_set)<dataGraph.node_limit:
-        print('Number of nodes added = ',len(dataGraph.m_node_set))
-        if len(dataGraph.m_user_queue) ==0:
-            break
-        id,follower_set,following_set = dataGraph.get_followers_following()
-        dataGraph.add_to_graph(id,follower_set,following_set)
-
-
-#replace 'client_id' and 'client_secret' with actual values and also find one 'user_id' to start the task
-dataGraph.helix = twitch.Helix('client_id','client_secret')
-dataGraph.m_user_queue.append(int('user_id'))
-dataGraph.m_user_queue_set.add(int('user_id'))
-runner()
-print(nx.adjacency_matrix(dataGraph.m_graph))
-
